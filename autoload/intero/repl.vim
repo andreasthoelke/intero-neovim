@@ -166,6 +166,61 @@ function! intero#repl#insert_type() abort
     endif
 endfunction
 
+
+" start insert! ----------------------------------------------------------------------------------
+" TODO: make a proper API for this!
+
+" generic type, just simpler
+function! InsertGenType() abort
+    call intero#process#add_handler(function('s:paste_type'))
+
+    let l:ident = intero#util#get_haskell_identifier()
+    call intero#repl#send(':type ' . l:ident)
+endfunction
+
+" instantiated type
+function! InsertInstType() abort
+    call intero#process#add_handler(function('s:paste_type_inst'))
+
+    call intero#repl#type(0)
+endfunction
+
+" eval result
+function! InsertEvalRes() abort
+    call intero#process#add_handler(function('s:paste_eval_res'))
+    " this adds a callback - I don't think it's linked to the to the repl-eval 
+    " call below, other than in terms of time/sequence relation.
+
+    let l:ident = intero#util#get_haskell_identifier()
+    call intero#repl#eval(l:ident)
+    " this eventually calls jobsend:
+    " call jobsend(g:intero_job_id, add([a:str], ''))
+endfunction
+
+function! InsertEvalExpressionRes(expression) abort
+    call intero#process#add_handler(function('s:paste_eval_res_comment'))
+    " call intero#process#add_handler(function('s:paste_type'))
+
+    call intero#repl#eval(a:expression)
+
+endfunction
+
+
+" new
+function! intero#repl#insert_info() abort
+    if !g:intero_started
+        echoerr 'Intero is still starting up'
+    else
+        call intero#process#add_handler(function('s:paste_info'))
+
+        let l:ident = intero#util#get_haskell_identifier()
+        call intero#repl#send(':info ' . l:ident)
+
+    endif
+endfunction
+" end insert! ----------------------------------------------------------------------------------
+
+
 function! intero#repl#reload() abort
     if !g:intero_started
         echoerr 'Intero is still starting up'
@@ -284,6 +339,56 @@ function! intero#repl#type_on_hover_handler(lines) abort
     endif
 endfunction
 
+" start insert ----------------------------------------------------------------------------------
+function! s:paste_type_gen(lines) abort
+    let l:message = join(a:lines, '\n')
+    if l:message =~# ' :: '
+        call append(line('.')-1, a:lines)
+    else
+        echomsg l:message
+    end
+    call PurescriptUnicode()
+endfunction
+
+function! s:paste_type_inst(lines) abort
+    let l:message = join(a:lines, '\n')
+    if l:message =~# ' :: '
+        call append(line('.')-1, a:lines)
+    else
+        echomsg l:message
+    end
+    call PurescriptUnicode()
+endfunction
+
+function! s:paste_info(lines) abort
+    let l:message = join(a:lines, '\n')
+    if l:message =~# ' :: '
+        call append(line('.')-1, a:lines)
+    else
+        echomsg l:message
+    end
+    call PurescriptUnicode()
+endfunction
+
+function! s:paste_eval_res(lines) abort
+    " let l:message = join(a:lines, '\n')
+    call append(line('.'), a:lines)
+    " call append(line('.')+2, l:message)
+
+    " call PurescriptUnicode()
+endfunction
+
+function! s:paste_eval_res_comment(lines) abort
+    " let l:toinsert = "-- " . a:lines[0]
+    " call append(line('.'), l:toinsert)
+    call append(line('.'), a:lines)
+endfunction
+
+" end insert ----------------------------------------------------------------------------------
+
+
+
+
 """"""""""
 " Private:
 """"""""""
@@ -316,5 +421,16 @@ function! s:ghci_supports_type_at_and_uses() abort
                 \ g:intero_backend_info.version, [8, 0, 1])
     return g:intero_backend_info.backend ==# 'intero' || l:ghci_has_type_at
 endfunction
+
+" function! s:paste_type_gen(lines) abort
+"     let l:message = join(a:lines, '\n')
+"     if l:message =~# ' :: '
+"         call append(line('.')-1, a:lines)
+"     else
+"         echomsg l:message
+"     end
+"     call PurescriptUnicode()
+" endfunction
+
 
 " vim: set ts=4 sw=4 et fdm=marker:

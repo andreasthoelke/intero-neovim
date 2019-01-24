@@ -45,6 +45,14 @@ command! -nargs=0 -bang InteroInfo call intero#repl#info()
 command! -nargs=0 -bang InteroGoToDef call intero#loc#go_to_def()
 " Insert type of thing below cursor
 command! -nargs=0 -bang InteroTypeInsert call intero#repl#insert_type()
+
+" Insert type of thing below cursor
+command! -nargs=0 -bang InteroInfoInsert call intero#repl#insert_info()
+
+command! -nargs=0 -bang InteroGenTypeInsert call InsertGenType()
+
+command! -nargs=0 -bang InteroInstTypeInsert call InsertInstType()
+
 " Reload
 command! -nargs=0 -bang InteroReload call intero#repl#reload()
 " Highlight uses of the identifier under cursor
@@ -80,7 +88,21 @@ if g:intero_use_neomake
     " QuickFix list.
     "
     " Code credit to @owickstrom from his neovim-ghci fork :)
-    let s:efm = '%E%f:%l:%c:\ error:%#,' .
+    " Note AT: this puts everything in one line. using the old format again below
+    " https://github.com/parsonsmatt/intero-neovim/commit/c411f887cfd4ea829f31a90802498f7708a9860f#diff-af3ee7e196a667da058f986189530d83
+    " TODO: create an option for this? or merge via Github?
+    let s:efm = '%f:%l:%c:\ hi:%m,' .
+                \ '%W%f:%l:%c:\ warning:%#,' .
+                \ '%W%f:%l:%c:\ warning:\ [-W%.%#]%#,' .
+                \ '%f:%l:%c:\ %thixho: %m,' .
+                \ '%f:%l:%c:\ %tarning: %m,' .
+                \ '%E%f:%l:%c:%#,' .
+                \ '%E%f:%l:%c:%m,' .
+                \ '%W%f:%l:%c:\ Warning:%#,' .
+                \ '%C\ \ %m%#,' .
+                \ '%-G%.%#'
+
+    let s:baefm = '%E%f:%l:%c:\ error:%#,' .
                 \ '%W%f:%l:%c:\ warning:%#,' .
                 \ '%W%f:%l:%c:\ warning:\ [-W%.%#]%#,' .
                 \ '%f:%l:%c:\ %trror: %m,' .
@@ -91,10 +113,20 @@ if g:intero_use_neomake
                 \ '%C\ \ %m%#,' .
                 \ '%-G%.%#'
 
+
+    let s:oldefm =  '%-G%\s%#,' .
+                \ '%f:%l:%c:%trror: %m,' .
+                \ '%f:%l:%c:%tarning: %m,'.
+                \ '%f:%l:%c: %trror: %m,' .
+                \ '%f:%l:%c: %tarning: %m,' .
+                \ '%E%f:%l:%c:%m,' .
+                \ '%E%f:%l:%c:,' .
+                \ '%Z%m'
+
     let g:neomake_intero_maker = {
             \ 'exe': 'cat',
             \ 'args': [intero#maker#get_log_file()],
-            \ 'errorformat': s:efm
+            \ 'errorformat': s:oldefm
         \ }
 endif
 
